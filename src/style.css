@@ -1,0 +1,169 @@
+:root{
+  --bg:#fff;
+  --ink:#0b0d14;
+  --muted:#e9edf3;
+  --muted-2:#d9dfea;
+  --ring:#111;
+  --panel:#fff;
+  --soft-shadow:0 12px 28px rgba(15,23,42,.06);
+  --radius:18px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+}
+
+.app{
+  display:grid; grid-template-columns: 340px 1fr 380px; gap:24px;
+  height:100dvh; padding:22px 26px;
+}
+
+/* Panels */
+.left,.right,.center{
+  border:1px solid var(--muted);
+  border-radius:var(--radius);
+  background:var(--panel);
+  box-shadow:var(--soft-shadow);
+}
+
+/* LEFT: ürünler (minimize) */
+.left{
+  padding:16px;
+  display:flex; flex-direction:column; gap:14px;
+}
+.brand{
+  display:flex; align-items:center; gap:10px;
+  font-weight:800; letter-spacing:.2px;
+}
+.brand img{ width:26px; height:26px; object-fit:contain; }
+.brand small{ color:#6b7280; font-weight:600; }
+
+.accordion{ display:flex; flex-direction:column; gap:10px; }
+details{
+  border:1px solid var(--muted);
+  border-radius:14px; overflow:hidden; background:#fff;
+}
+summary{
+  list-style:none; cursor:pointer; user-select:none;
+  padding:12px 14px; display:flex; align-items:center; gap:10px;
+  font-weight:700; letter-spacing:.15px;
+}
+summary::-webkit-details-marker{ display:none; }
+.chev{ margin-left:auto; transition:transform .18s ease; }
+details[open] .chev{ transform:rotate(180deg); }
+
+.section{
+  padding:12px 12px 14px; border-top:1px solid var(--muted);
+  background:linear-gradient(#fff, #fafbfc);
+}
+
+/* Ürün grid (solda) */
+#productGrid.grid{
+  display:grid; grid-template-columns: repeat(3, 1fr);
+  gap:10px; max-height:48vh; overflow:auto; padding:6px;
+}
+.thumb{
+  display:flex; flex-direction:column; gap:6px; align-items:center;
+  background:#fff; border:1px solid var(--muted); border-radius:12px; padding:8px;
+  cursor:pointer; transition:.14s ease; text-align:center;
+}
+.thumb:hover{ transform:translateY(-2px); box-shadow:0 10px 20px rgba(0,0,0,.06); border-color:var(--muted-2); }
+.thumb img{ width:100%; aspect-ratio:1/1; object-fit:contain; }
+.thumb small{ color:#6b7280; font-weight:600; }
+
+.priceBox{
+  margin-top:2px; background:#0f172a; color:#fff; border-radius:12px; padding:12px;
+}
+.priceRow{ display:flex; justify-content:space-between; align-items:center; }
+.priceRow b{ font-size:18px; }
+
+/* CENTER: viewer */
+.center{
+  position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center;
+}
+#webgl { background: transparent; }
+
+#webgl.viewer{ width:100%; height:100%; display:block; cursor:grab; }
+#webgl.viewer.dragging{ cursor:grabbing; }
+.hint{
+  position:absolute; bottom:14px; right:14px; font-size:12px; color:#667085;
+  background:#ffffffcc; backdrop-filter:saturate(1.1) blur(4px); padding:6px 10px;
+  border-radius:8px; border:1px solid #eceff5;
+}
+
+/* RIGHT: Temalar + Logo ekle (minimize) */
+.right{ padding:14px; display:flex; flex-direction:column; gap:12px; }
+
+.section-title{
+  display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
+}
+
+/* Temalar grid */
+#themes.themes{
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(70px,1fr));
+  gap:12px;
+}
+.theme{
+  width:100%; aspect-ratio:1/1; border-radius:14px;
+  border:1px solid var(--muted); background:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:.14s ease; position:relative; overflow:hidden;
+}
+.theme:hover{ transform:translateY(-2px); box-shadow:0 12px 24px rgba(0,0,0,.07); border-color:var(--muted-2); }
+.theme img, .theme svg{ max-width:64%; max-height:64%; object-fit:contain; filter:contrast(1.05) saturate(.9); }
+.theme.is-active{ outline:2px solid var(--ring); outline-offset:2px; }
+
+/* Logo ekle kartı */
+.upload{
+  border:1px dashed var(--muted-2);
+  background:linear-gradient(#fff, #fbfdff);
+  border-radius:14px; padding:14px; text-align:center; color:#475569;
+}
+.drop{
+  border:1px dashed var(--muted); border-radius:12px; padding:16px;
+  display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center;
+  background:#f9fbff;
+}
+.drop strong{ color:#0b0d14; }
+.upload-actions{
+  display:flex; gap:8px; justify-content:center; margin-top:10px;
+}
+.btn{
+  appearance:none; border-radius:10px; padding:10px 12px; cursor:pointer;
+  border:1px solid var(--muted); background:#f6f7fa; color:#0b0d14; font-weight:600;
+  transition:.14s ease;
+}
+.btn:hover{ background:#fff; border-color:var(--muted-2); box-shadow:0 10px 20px rgba(0,0,0,.06); transform:translateY(-1px); }
+.btn.primary{
+  background:#0f172a; color:#fff; border:1px solid #0f172a; box-shadow:0 12px 28px rgba(15,23,42,.14);
+}
+.btn.primary:hover{ transform:translateY(-1px); box-shadow:0 16px 34px rgba(15,23,42,.2); }
+
+/* Reset + CTA */
+.footer-actions{ display:grid; gap:8px; }
+#btnReset{
+  appearance:none; border-radius:10px; padding:10px 12px; cursor:pointer;
+  border:1px dashed var(--muted-2); background:#fff; color:#475569; font-weight:600;
+  transition:.14s ease;
+}
+#btnReset:hover{ background:#f9fafb; color:#0f172a; border-color:#cfd6e3; }
+#btnCreate{
+  border:none; border-radius:12px; padding:14px 16px; font-weight:800; letter-spacing:.2px;
+  background:#0f172a; color:#fff; box-shadow:0 12px 30px rgba(15,23,42,.18); cursor:pointer;
+  transition:.14s ease;
+}
+#btnCreate:hover{ transform:translateY(-1px); box-shadow:0 16px 36px rgba(15,23,42,.22); }
+#btnCreate:disabled{ opacity:.6; box-shadow:none; cursor:not-allowed; }
+
+/* Responsive */
+@media (max-width:1100px){
+  .app{ grid-template-columns:1fr; grid-auto-rows:auto; }
+  .center{ height:62dvh; order:0 }
+  .left{ order:1 }
+  .right{ order:2 }
+  #productGrid.grid{ grid-template-columns: repeat(4, 1fr); }
+  #themes.themes{ grid-template-columns: repeat(5, 1fr); }
+}
