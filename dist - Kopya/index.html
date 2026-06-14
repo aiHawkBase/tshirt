@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vibe – Those Who Don’t Jump Will Never Fly</title>
+<meta name="description" content="Ultra-soft Future Tee. 'Those who don't jump will never fly' temalı özel koleksiyon. Hızlı teslimat, kolay iade." />
+<style>
+  :root{
+    /* Tema / palet */
+    --ink: url("tokyo_bg.webp") #161616;
+    --ink-2:#121317;
+    --muted:#1b1d22;
+    --line:#2a2d35;
+    --txt:#e9edf3;
+    --sub:#b7bfcc;
+    --accent:#d6c119;
+
+    /* Katmanlar ve efektler */
+    --glass: rgba(18,19,23,.58);
+    --glass-line: rgba(255,255,255,.08);
+    --glass-glow: radial-gradient(120% 120% at 50% 20%, rgba(214, 193, 25, .18), transparent 60%);
+
+    /* Arka duvar paper (ürüne göre JS ile override’lanabilir) */
+    --hero-bg: var(--ink);
+    --side-left-url:  url("hawk1.webp");
+  --side-right-url: url("hawk1_1.webp");
+  --side-width: clamp(120px, 18vw, 158px);
+  --side-opacity: .92;
+    /* Boyutlar */
+    --container-w: min(1600px, 95%);
+    --header-h: 50px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    color:var(--txt);
+    font:400 15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+    background: var(--hero-bg);
+    /* hafif paralaks */
+   
+  }
+  a{color:inherit;text-decoration:none}
+  .container{width:var(--container-w);margin-inline:auto}
+
+  /* HEADER */
+  .header{
+    position:absolute; top:0; z-index:100; width: 100%;
+    height:var(--header-h);
+    display:flex; align-items:center;
+    backdrop-filter:saturate(1.2) blur(10px);
+    background:linear-gradient(180deg,rgba(12,13,15,.85),rgba(12,13,15,.55));
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;gap:16px;justify-content:space-between;width:var(--container-w);margin-inline:auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.4px}
+  .brand .dot{width:10px;height:10px;background:var(--accent);border-radius:2px;box-shadow:0 0 0 3px #2d2a10 inset}
+  .links{display:flex;gap:22px;align-items:center}
+  .links a{color:var(--sub)} .links a:hover{color:var(--txt)}
+  .cta{padding:10px 16px;border-radius:12px;background:var(--accent);color:#151308;font-weight:700;border:0;cursor:pointer}
+  .cta:hover{filter:brightness(1.05)}
+  .menu-btn{display:none;background:transparent;border:1px solid var(--line);padding:8px 10px;border-radius:10px;color:var(--txt)}
+
+  /* HERO LAYOUT: sol tam boy 3D + sağ panel */
+  .hero{
+    position:relative;
+    display:grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap:32px;
+    align-items:stretch; /* sol kolon boydan boya */
+    min-height: calc(100svh - var(--header-h));
+  }
+
+  /* SOL: 3D alanı */
+  .three-wrap{
+    position:relative;
+    height: calc(100svh );
+    border-radius: 22px;
+    /* model çerçevenin dışına taşabilsin */
+    overflow: visible;
+    outline:1px solid rgba(255,255,255,.06);
+    box-shadow:0 16px 60px rgba(0,0,0,.35);
+    background: transparent;
+    /* sahneye çok hafif “nebula” doku */
+    isolation:isolate;
+  }
+  /* canvas tüm alanı kaplasın */
+  #webgl{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    display:block; background:transparent; cursor:grab;
+    z-index:2; /* cam çerçevenin ÜSTÜNDE görünürse 3D “çıkıyor” efekti olur */
+  }
+  #webgl.dragging{ cursor:grabbing; }
+
+  /* Ortalayıcı GLASS FRAME – arkada, referans */
+  .glass-frame{
+    position:fixed; inset:auto;
+    left:50%; top:50%;
+    transform: translate(-50%, -50%);
+    width:100%;
+    aspect-ratio: 1;
+    border-radius: 24px;
+
+    border:1px solid var(--glass-line);
+    box-shadow:
+      0 24px 80px rgba(0,0,0,.35),
+      inset 0 0 0 1px rgba(255,255,255,.06);
+    pointer-events:none;
+    z-index:-1; /* canvas’ın GERİSİNDE kalsın */
+    backdrop-filter: saturate(1.1) blur(8px);
+  }
+  /* Çerçeve içinde ince çizgi animasyonu (futuristic) */
+  .glass-frame::before{
+    content:"";
+    position:absolute; inset:0;
+    border-radius: inherit;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.08), transparent 40%) top/100% 2px no-repeat,
+      linear-gradient(90deg, rgba(255,255,255,.06), transparent 60%) left/2px 100% no-repeat;
+    mask: linear-gradient(#000, transparent 70%);
+    opacity:.7;
+    animation: drift 6s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    0%{ transform: translateY(-2%); opacity:.55 }
+    100%{ transform: translateY(2%); opacity:.8 }
+  }
+  .side-banner{
+  position: fixed;
+  top: var(--header-h);
+  bottom: 0;
+  width: var(--side-width);
+  z-index: 1;                 /* header(100) < içerik(>1). Canvas’tan geride kalmasını istiyorsan 0 yap. */
+  margin: 0;
+  pointer-events: none;       /* UI ile çakışmasın */
+  overflow: hidden;
+  display: block;
+  /* cam hissi */
+  border: none;
+  backdrop-filter: saturate(1.05) blur(2px);
+  box-shadow: 0 12px 60px rgba(0,0,0,.35) inset;
+}
+.side-banner.left  { left: 0;  border-right: 0 }
+.side-banner.right { right: 0; border-left:  0 }
+
+.side-banner img{
+  width: 100%; height: 100%; object-fit: cover;
+  opacity: var(--side-opacity);
+  transform: translateZ(0); will-change: transform, opacity;
+  transition: opacity .6s ease;
+  filter: contrast(1.02) saturate(1.02);
+}
+
+/* İç kenara doğru yumuşak maske (merkezle kaynaşır) */
+.side-banner.left::after,
+.side-banner.right::after{
+  content:""; position:absolute; top:0; bottom:0; width: 120px; pointer-events:none;
+}
+.side-banner.left::after{
+  right: -1px;
+  background: linear-gradient(90deg, rgba(12,13,15,0) 0%, rgba(12, 13, 15, 0.247) 70%, rgba(12, 13, 15, 0.295) 100%);
+}
+.side-banner.right::after{
+  left: -1px;
+  background: linear-gradient(270deg, rgba(12,13,15,0) 0%, rgba(12, 13, 15, 0.253) 70%, rgba(12, 13, 15, 0.329) 100%);
+}
+
+/* Mobilde gizle veya incelt */
+@media (max-width: 1080px){
+  .side-banner{ display:none; }
+}
+  /* Nav arrows (sol 3D içinde) */
+  .nav-arrow{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:44px; height:44px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(20,22,26,.55); color:#fff; font-size:22px; font-weight:800;
+    display:grid; place-items:center; cursor:pointer;
+    backdrop-filter:saturate(1.1) blur(6px);
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+    z-index:3;
+  }
+  .nav-arrow:hover{ background:rgba(20,22,26,.75) }
+  .nav-arrow.left{  left:12px }
+  .nav-arrow.right{ right:12px }
+
+  /* SAĞ: ürün kartı – glass */
+  .hero-card{
+    align-self: center;
+    width:100%;
+    border-radius:22px; padding:20px;
+    background:
+      radial-gradient(120% 120% at 100% 0%, rgba(29,58,45,.4), transparent 60%),
+      rgba(18,19,23,.52);
+    border:1px solid var(--glass-line);
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+    backdrop-filter: saturate(1.05) blur(8px);
+  }
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--sub);font-weight:600}
+  .eyebrow .badge{background:#122; border:1px solid #234; color:#9dd8a0; padding:4px 8px; border-radius:999px;font-size:12px}
+  h1{margin:.2em 0 .4em;font-size:clamp(28px,4vw,44px);line-height:1.15}
+  .lead{color:#cfd6e3;max-width:58ch}
+  .price{font-size:32px;font-weight:800;letter-spacing:.2px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .swatch{width:26px;height:26px;border-radius:999px;border:1px solid #0003}
+  .sw1{background:var(--accent)} .sw2{background:#2e7b2a}
+  .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;
+    padding:12px 14px;border-radius:12px;border:1px solid var(--line);font-weight:700}
+  .btn.primary{background:var(--accent);border-color:#3b360c;color:#151308}
+  .btn.ghost{background:transparent;color:#fff}
+  .note{font-size:12px;color:#aab2bf}
+
+  /* FOOTER */
+  footer{
+    position: fixed;
+    width: 100%;
+    height: 50px;
+    bottom: 0%;
+    border-top: 1px solid var(--line);
+    /* padding: 28px 0; */
+    backdrop-filter: saturate(1.2) blur(10px);
+    background: linear-gradient(180deg, rgba(12, 13, 15, .85), rgba(12, 13, 15, .55));
+    display: flex
+;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+  }
+  .foot{display:grid;grid-template-columns:1.3fr .7fr .7fr 1fr;gap:20px}
+  .foot h4{margin:0 0 10px;font-size:14px;color:#cfd6e3}
+  .foot a{display:block;color:var(--sub);padding:6px 0}
+  .copy{margin-top:18px;color:var(--sub);font-size:13px}
+
+  /* RESPONSIVE */
+  @media (max-width:1080px){
+    .hero{grid-template-columns:1fr;gap:18px}
+    .three-wrap{height: min(58svh, 520px)}
+    .hero-card{margin-bottom: 12px}
+    .links{display:none}
+    .menu-btn{display:inline-flex}
+  }
+</style>
+  <script type="module" crossorigin src="/assets/index-BdIqrxn-.js"></script>
+</head>
+<body>
+
+<header class="header">
+  <div class="nav">
+    <div class="brand"><span class="dot"></span> VIBE</div>
+    <nav class="links"></nav>
+    <div class="row">
+      <button class="menu-btn" aria-label="Menü">☰</button>
+    </div>
+  </div>
+</header>
+<!-- SIDE BANNERS -->
+<figure class="side-banner left"  aria-hidden="true">
+  <img id="sideLeft"  alt="" />
+</figure>
+<figure class="side-banner right" aria-hidden="true">
+  <img id="sideRight" alt="" />
+</figure>
+
+<main class="container">
+  <!-- HERO -->
+  <div class="glass-frame" aria-hidden="true"></div>
+
+  <section id="urun" class="hero">
+    <!-- SOL: Tam boy 3D -->
+     
+    <div class="three-wrap">
+      <!-- Arkadaki ortalayıcı cam çerçeve -->
+   
+      <!-- 3D canvas -->
+      <canvas id="webgl" aria-label="3D Tuval"></canvas>
+
+      <!-- Navigasyon okları -->
+      <button class="nav-arrow left"  id="prevProduct" aria-label="Önceki">‹</button>
+      <button class="nav-arrow right" id="nextProduct" aria-label="Sonraki">›</button>
+    </div>
+
+    <!-- SAĞ: ürün metinleri -->
+    <aside class="hero-card">
+      <div class="eyebrow" style="margin-bottom:6px">
+        <span class="badge">Yeni</span> VIBE – Limited
+      </div>
+      <h1>Those who don’t <span style="color:var(--accent)">jump</span> will never fly.</h1>
+      <p class="lead">
+        Ultra-soft örgü, nefes alabilir kumaş ve kırışma direnci. Koyu zemin üzerine sarı-yeşil “FLY” baskı. %100 memnuniyet – 30 gün iade.
+      </p>
+<!-- hero-card içinde -->
+<div class="row" id="colorVariants"></div>
+
+    
+
+      <div class="row" style="margin:6px 0 12px">
+        <span>Beden:</span>
+        <select style="background:#0f1116;border:1px solid var(--line);color:var(--txt);padding:10px;border-radius:10px">
+          <option>XS</option><option selected>S</option><option>M</option><option>L</option><option>XL</option>
+        </select>
+      </div>
+      
+      <div class="row" style="margin:10px 0 8px">
+        <button class="btn primary">Satın Al</button>
+        <!-- === TRY-ON: Kendi üstünde dene === -->
+<section class="tryon glass" style="margin-top:14px; padding:14px; border:1px solid var(--glass-line); border-radius:16px; background:rgba(18,19,23,.48); backdrop-filter:saturate(1.05) blur(8px);">
+  <h3 style="margin:0 0 10px; font-size:16px;">Kendi Üstünde Dene</h3>
+
+  <div style="display:grid; gap:10px;">
+    <button id="tryonRunSingle" 
+            class="btn primary" 
+            style="justify-content:center; gap:10px; padding:12px 18px; border-radius:12px;">
+      Üstünde Dene
+    </button>
+  </div>
+  
+  <!-- TRY-ON RESULT MODAL -->
+<div id="tryonModal"
+style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:9999;">
+<div style="position:relative; width:min(92vw,1100px); max-height:92vh; background:#0f1116; border:1px solid #2a2d35; border-radius:16px; overflow:auto; padding:12px;">
+<button id="tryonClose"
+       style="position:absolute; top:8px; right:8px; background:rgba(255,255,255,.1); border:1px solid #3a3f49; color:#fff; border-radius:10px; padding:8px 10px; cursor:pointer;">
+ Kapat
+</button>
+<img id="tryonResult" alt="Önizleme" style="width:100%; height:auto; display:block; border-radius:12px;">
+<div style="display:flex; gap:8px; margin-top:10px;">
+ <a id="tryonDownload" class="btn" download="tryon.png" style="text-decoration:none;">İndir</a>
+</div>
+</div>
+</div>
+</section>
+
+      </div>
+      <p class="note">Hızlı gönderim ve güvenli ödeme. Görseller temsildir; kumaş tonunda üretime göre küçük farklar olabilir.</p>
+    </aside>
+  </section>
+</main>
+
+<footer>
+        <h4>Vibe Fly</h4>
+ 
+</footer>
+
+
+
+<!-- Wiggle/Three -->
+</body>
+</html>
