@@ -1,5 +1,9 @@
 node_modules
+node_modules - Kopya
 dist
+dist - Kopya
+*- Kopya
+* - Kopya
 .DS_Store
 .env
 .gemini
