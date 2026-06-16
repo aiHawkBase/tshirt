@@ -84,6 +84,7 @@ on(els.run, "click", async () => {
   try {
     els.run.disabled = true;
     els.run.textContent = "Hazırlanıyor…";
+    showLoading("Fotoğrafınız Analiz Ediliyor", "Duruş açınız tespit ediliyor (ön/arka)...");
 
     const frontUrl = ACTIVE_SPEC.garmentFrontUrl || "";
     const backUrl  = ACTIVE_SPEC.garmentBackUrl  || "";
@@ -122,6 +123,7 @@ on(els.run, "click", async () => {
   } finally {
     els.run.disabled = false;
     els.run.textContent = "Gemini ile Dene";
+    hideLoading();
   }
 });
 
@@ -151,9 +153,10 @@ if (tryonRunSingle) {
       const file = await fileHandle.getFile();
       const userB64 = await toBase64(file, true);
 
-      // 2️⃣ Butonu pasifleştir
+      // 2️⃣ Butonu pasifleştir & Loading popup'ını aç
       tryonRunSingle.disabled = true;
       tryonRunSingle.textContent = "Hazırlanıyor…";
+      showLoading("Fotoğrafınız Analiz Ediliyor", "Duruş açınız tespit ediliyor (ön/arka)...");
 
       // 3️⃣ Try-on işlemini başlat
       const resultB64 = await runGeminiTryOn({
@@ -182,6 +185,7 @@ if (tryonRunSingle) {
     } finally {
       tryonRunSingle.disabled = false;
       tryonRunSingle.textContent = "Üstünde Dene";
+      hideLoading();
     }
   });
 }
@@ -227,40 +231,41 @@ function checkImage(url) {
   });
 }
 
-/* ---------- Gemini API ---------- */
-async function detectPose(userB64, apiKey) {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  const payload = {
-    contents: [{
-      parts: [
-        { text: "Is the person in this photo facing the camera (front view) or is their back turned to the camera (back view)? Respond with exactly one word: 'front' or 'back'." },
-        { inlineData: { mimeType: "image/png", data: userB64 } }
-      ]
-    }],
-    generationConfig: {
-      temperature: 0.1,
-    }
-  };
+function showLoading(title, desc) {
+  const modal = document.getElementById("tryonLoadingModal");
+  const tEl = document.getElementById("tryonLoadingStatusTitle");
+  const dEl = document.getElementById("tryonLoadingStatusDesc");
+  if (modal) modal.style.display = "flex";
+  if (tEl && title) tEl.textContent = title;
+  if (dEl && desc) dEl.textContent = desc;
+}
 
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      console.warn("Pose detection failed, status:", res.status);
-      return "front";
-    }
-    const json = await res.json();
-    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toLowerCase() || "";
-    console.log("[POSE] Gemini response:", text);
-    if (text.includes("back")) return "back";
-    return "front";
-  } catch (e) {
-    console.warn("Pose detection error:", e);
-    return "front";
+function updateLoading(desc) {
+  const dEl = document.getElementById("tryonLoadingStatusDesc");
+  if (dEl && desc) dEl.textContent = desc;
+}
+
+function hideLoading() {
+  const modal = document.getElementById("tryonLoadingModal");
+  if (modal) modal.style.display = "none";
+}
+
+/* ---------- Gemini API Proxy Call ---------- */
+async function callServerlessAction(action, data) {
+  const res = await fetch("/api/tryon/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, ...data })
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(json.error || `HTTP ${res.status}`);
   }
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json;
 }
 
 async function runGeminiTryOn(opts) {
@@ -269,111 +274,25 @@ async function runGeminiTryOn(opts) {
     bgMode, bgB64, garmentFrontB64, garmentBackB64
   } = opts;
 
-  const API_KEY = "";
-  if (!API_KEY || API_KEY.startsWith("YOUR_")) {
-    throw new Error("Gemini API anahtarı eksik. tryon.js içinde API_KEY girin.");
-  }
-
-  // 1️⃣ Kişinin önünün mü arkasının mı dönük olduğunu tespit et
-  const pose = await detectPose(userB64, API_KEY);
+  // 1️⃣ Duruş Tespiti Eylemi
+  const detectRes = await callServerlessAction("detect", { userB64 });
+  const pose = detectRes.pose || "front";
   console.log("[TRYON] Tespit edilen yön:", pose);
 
-  // 2️⃣ Yön bilgisine göre ön veya arka şablonu seç (eğer arka şablon yoksa ön şablona düş)
-  let selectedGarmentB64 = garmentFrontB64;
-  let selectedLabel = "Tişört Ön Şablon (şeffaf PNG):";
+  // 2️⃣ Yükleme mesajını güncelle
+  updateLoading("Tişört üzerinize göre uyarlanıyor ve yerleştiriliyor...");
 
-  if (pose === "back") {
-    if (garmentBackB64) {
-      selectedGarmentB64 = garmentBackB64;
-      selectedLabel = "Tişört Arka Şablon (şeffaf PNG):";
-    } else {
-      console.warn("[TRYON] Arka şablon bulunamadı, ön şablon kullanılıyor.");
-    }
-  }
-
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${API_KEY}`;
-
-  // Arka plan talimatı
-  let bgText = "Arka planı fotoğraftaki gibi bırak.";
-  if (bgMode === "white")    bgText = "Arka planı beyaz stüdyo zemin yap.";
-  if (bgMode === "gradient") bgText = "Arka planı koyu yumuşak bir degrade yap, stüdyo ışığı gibi.";
-  if (bgMode === "custom")   bgText = "Arka planı gönderdiğim özel görselle değiştir.";
-
-  const prompt = [
-    `Bu fotoğraftaki kişiye ${productName} giydir.`,
-    "ŞABLONLARDAKİ RENKLERİ AYNEN KORU. Yeniden renklendirme yapma; yalnızca ışık koşullarına çok az uyum sağlayacak kadar ton eşlemesi yap.",
-    `Kullanılacak tişört şablonu aşağıda verilmiştir (Kişinin ${pose === 'back' ? 'arka' : 'ön'} tarafı için). Mevcut tişörtün yerini bu şablonla BİREBİR hizalayarak değiştir.`,
-    "Şablonun yaka, omuz, kol ve gövde hatlarına sadık kal. Deseni/dokuyu bozma; yalnızca perspektif, ışık ve kumaş kırışıklıklarına uydur.",
-    "Kollar, yaka ve gövde hizalaması gerçekçi olsun. Yüz ve saç doğal kalsın.",
-    "Gövde ve elleri bozma; gerekmedikçe ellerin üzerini kapatma.",
-    "Kısa kollu tişört olarak uygula; kişinin vücut oranlarını koru.",
-    "Çıktı: Tam boy portre, kırpmasız, dikey kompozisyon.",
-    bgText
-  ].join(" ");
-
-  const parts = [
-    { text: prompt },
-    { inlineData: { mimeType: "image/png", data: userB64 } },
-  ];
-
-  if (selectedGarmentB64) {
-    parts.push({ text: selectedLabel });
-    parts.push({ inlineData: { mimeType: "image/png", data: selectedGarmentB64 } });
-  } else {
-    console.warn("TRYON: seçilen şablon eksik (null)");
-  }
-
-  if (garmentDiffuse) {
-    parts.push({ text: "Aşağıdaki görsel, giysinin baskı veya renk dokusu için referans alınacaktır:" });
-    parts.push({ text: garmentDiffuse });
-  }
-
-  if (bgMode === "custom" && bgB64) {
-    parts.push({ text: "Arka plan için kullanılacak görsel:" });
-    parts.push({ inlineData: { mimeType: "image/png", data: bgB64 } });
-  }
-
-  const payload = {
-    contents: [{ role: "user", parts }],
-    generationConfig: {
-      temperature: 0.15,
-      responseModalities: ["IMAGE"],
-    },
-  };
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+  // 3️⃣ Sanal Giydirme Eylemi
+  const tryonRes = await callServerlessAction("tryon", {
+    userB64,
+    garmentDiffuse,
+    productName,
+    pose,
+    bgMode,
+    bgB64,
+    garmentFrontB64,
+    garmentBackB64
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(()=> ({}));
-    console.error("Gemini HTTP hata:", res.status, err);
-    throw new Error(err?.error?.message || `HTTP ${res.status}`);
-  }
-
-  const json = await res.json();
-  const cand = json?.candidates?.[0];
-  if (!cand) {
-    console.warn("Gemini boş candidates döndürdü:", json);
-    return null;
-  }
-  if (cand.finishReason && cand.finishReason !== "FINISH_REASON_UNSPECIFIED") {
-    console.warn("finishReason:", cand.finishReason, "safetyRatings:", cand.safetyRatings);
-  }
-
-  const outParts = cand?.content?.parts || [];
-  const imgPart = outParts.find(p => p?.inlineData && /^image\//i.test(p.inlineData.mimeType || "image/png"));
-  if (!imgPart?.inlineData?.data) {
-    const text = outParts.map(p => p.text).filter(Boolean).join("\n");
-    console.warn("Model görsel yerine metin döndürdü:", text);
-    return null;
-  }
-
-  const b64 = imgPart.inlineData.data;
-  console.groupCollapsed("[TRYON] model output");
-  console.log("returned b64 length:", b64?.length || 0);
-  console.groupEnd();
-  return b64;
+  return tryonRes.resultB64;
 }

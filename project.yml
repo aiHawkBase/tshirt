@@ -1,0 +1,10 @@
+targetArea: api
+packages:
+  - name: tryon
+    shared: false
+    functions:
+      - name: run
+        runtime: nodejs:20
+        web: true
+        parameters: {}
+        environment: {}
