@@ -68,12 +68,12 @@ on(els.bgSel, "change", () => {
 
 on(els.bgFile, "change", async (e) => {
   const f = e.target.files?.[0];
-  BG_B64 = f ? await toBase64(f, true) : null;
+  BG_B64 = f ? await resizeAndCompressImage(f) : null;
 });
 
 on(els.user, "change", async (e) => {
   const f = e.target.files?.[0];
-  USER_B64 = f ? await toBase64(f, true) : null;
+  USER_B64 = f ? await resizeAndCompressImage(f) : null;
   if (els.fileHint) els.fileHint.textContent = f ? `Seçildi: ${f.name}` : "(boydan, iyi ışık)";
 });
 
@@ -151,7 +151,7 @@ if (tryonRunSingle) {
       });
 
       const file = await fileHandle.getFile();
-      const userB64 = await toBase64(file, true);
+      const userB64 = await resizeAndCompressImage(file);
 
       // 2️⃣ Butonu pasifleştir & Loading popup'ını aç
       tryonRunSingle.disabled = true;
@@ -191,6 +191,38 @@ if (tryonRunSingle) {
 }
 
 /* ---------- Helpers ---------- */
+function resizeAndCompressImage(file, maxDim = 1200, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas context could not be created"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      resolve(dataUrl.split(",")[1]);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 function toBase64(file, stripPrefix=false) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();

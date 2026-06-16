@@ -325,16 +325,27 @@
   
   <!-- TRY-ON RESULT MODAL -->
 <div id="tryonModal"
-style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:9999;">
-<div style="position:relative; width:min(92vw,1100px); max-height:92vh; background:#0f1116; border:1px solid #2a2d35; border-radius:16px; overflow:auto; padding:12px;">
-<button id="tryonClose"
-       style="position:absolute; top:8px; right:8px; background:rgba(255,255,255,.1); border:1px solid #3a3f49; color:#fff; border-radius:10px; padding:8px 10px; cursor:pointer;">
- Kapat
-</button>
-<img id="tryonResult" alt="Önizleme" style="width:100%; height:auto; display:block; border-radius:12px;">
-<div style="display:flex; gap:8px; margin-top:10px;">
- <a id="tryonDownload" class="btn" download="tryon.png" style="text-decoration:none;">İndir</a>
-</div>
+style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.85); backdrop-filter:blur(8px); z-index:9999;">
+<div style="position:relative; width:min(90vw, 600px); height:85vh; max-height:800px; background:#0f1116; border:1px solid rgba(255,255,255,.08); border-radius:20px; display:flex; flex-direction:column; padding:16px; box-shadow:0 24px 80px rgba(0,0,0,.5); overflow:hidden;">
+  <!-- Header (Title + Close Button) -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h3 style="margin:0; font-size:18px; font-weight:700; color:var(--txt);">Sanal Önizleme</h3>
+    <button id="tryonClose" style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:var(--txt); border-radius:10px; padding:6px 12px; cursor:pointer; font-weight:600; font-size:13px; transition: background .2s;">
+      Kapat
+    </button>
+  </div>
+  
+  <!-- Image Container (Flexible, fits image using object-fit: contain) -->
+  <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; background:#050505; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.03);">
+    <img id="tryonResult" alt="Önizleme" style="width:100%; height:100%; object-fit:contain; display:block;">
+  </div>
+  
+  <!-- Footer (Download Button) -->
+  <div style="display:flex; gap:10px; margin-top:12px;">
+    <a id="tryonDownload" class="btn primary" download="tryon.png" style="text-decoration:none; width:100%; text-align:center; padding:12px; border-radius:12px; font-weight:700; background:var(--accent); color:#151308; display:inline-block;">
+      Görseli İndir
+    </a>
+  </div>
 </div>
 </div>
 

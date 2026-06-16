@@ -61,6 +61,23 @@ async function detectPose(userB64, apiKey) {
 
 // 2️⃣ Ana Fonksiyon (DO Serverless Entry Point)
 async function main(args) {
+  // JSON gövdesini (body) çöz
+  let body = args;
+  if (args.__ow_body) {
+    try {
+      let rawBody = args.__ow_body;
+      if (typeof rawBody === "string") {
+        const trimmed = rawBody.trim();
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+          rawBody = Buffer.from(rawBody, "base64").toString("utf-8");
+        }
+      }
+      body = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
+    } catch (e) {
+      console.error("Failed to parse __ow_body:", e);
+    }
+  }
+
   // IP bazlı rate limit kontrolü
   const headers = args.__ow_headers || {};
   const ip = getClientIp(headers);
@@ -68,7 +85,7 @@ async function main(args) {
     return {
       headers: { "Content-Type": "application/json" },
       statusCode: 429,
-      body: { error: "Çok fazla istek gönderdiniz. Lütfen bir dakika sonra tekrar deneyin." }
+      body: JSON.stringify({ error: "Çok fazla istek gönderdiniz. Lütfen bir dakika sonra tekrar deneyin." })
     };
   }
 
@@ -78,27 +95,27 @@ async function main(args) {
     return {
       headers: { "Content-Type": "application/json" },
       statusCode: 500,
-      body: { error: "Sunucu hatası: Gemini API anahtarı yapılandırılmamış." }
+      body: JSON.stringify({ error: "Sunucu hatası: Gemini API anahtarı yapılandırılmamış." })
     };
   }
 
-  const { action } = args;
+  const action = body.action;
 
   // === Eylem: Duruş Tespiti ===
   if (action === "detect") {
-    const { userB64 } = args;
+    const userB64 = body.userB64;
     if (!userB64) {
       return {
         headers: { "Content-Type": "application/json" },
         statusCode: 400,
-        body: { error: "Kullanıcı fotoğrafı (userB64) eksik." }
+        body: JSON.stringify({ error: "Kullanıcı fotoğrafı (userB64) eksik." })
       };
     }
     const pose = await detectPose(userB64, API_KEY);
     return {
       headers: { "Content-Type": "application/json" },
       statusCode: 200,
-      body: { pose }
+      body: JSON.stringify({ pose })
     };
   }
 
@@ -107,13 +124,13 @@ async function main(args) {
     const {
       userB64, garmentDiffuse, productName, pose,
       bgMode, bgB64, garmentFrontB64, garmentBackB64
-    } = args;
+    } = body;
 
     if (!userB64) {
       return {
         headers: { "Content-Type": "application/json" },
         statusCode: 400,
-        body: { error: "Kullanıcı fotoğrafı (userB64) eksik." }
+        body: JSON.stringify({ error: "Kullanıcı fotoğrafı (userB64) eksik." })
       };
     }
 
@@ -191,7 +208,7 @@ async function main(args) {
         return {
           headers: { "Content-Type": "application/json" },
           statusCode: 502,
-          body: { error: `Gemini API hatası: ${err?.error?.message || res.statusText}` }
+          body: JSON.stringify({ error: `Gemini API hatası: ${err?.error?.message || res.statusText}` })
         };
       }
 
@@ -206,14 +223,14 @@ async function main(args) {
         return {
           headers: { "Content-Type": "application/json" },
           statusCode: 502,
-          body: { error: "Sanal deneme görseli üretilemedi." }
+          body: JSON.stringify({ error: "Sanal deneme görseli üretilemedi." })
         };
       }
 
       return {
         headers: { "Content-Type": "application/json" },
         statusCode: 200,
-        body: { resultB64: imgPart.inlineData.data }
+        body: JSON.stringify({ resultB64: imgPart.inlineData.data })
       };
 
     } catch (err) {
@@ -221,7 +238,7 @@ async function main(args) {
       return {
         headers: { "Content-Type": "application/json" },
         statusCode: 500,
-        body: { error: `Sunucu içi hata: ${err.message}` }
+        body: JSON.stringify({ error: `Sunucu içi hata: ${err.message}` })
       };
     }
   }
@@ -229,7 +246,7 @@ async function main(args) {
   return {
     headers: { "Content-Type": "application/json" },
     statusCode: 400,
-    body: { error: "Bilinmeyen eylem (action)." }
+    body: JSON.stringify({ error: "Bilinmeyen eylem (action)." })
   };
 }
 
