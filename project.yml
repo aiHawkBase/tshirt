@@ -1,4 +1,3 @@
-targetArea: api
 packages:
   - name: tryon
     shared: false
