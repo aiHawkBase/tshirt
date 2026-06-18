@@ -6,4 +6,5 @@ packages:
         runtime: nodejs:18
         web: true
         parameters: {}
-        environment: {}
+        environment:
+          GEMINI_API_KEY: "${GEMINI_API_KEY}"
