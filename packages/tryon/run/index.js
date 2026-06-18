@@ -123,7 +123,7 @@ async function main(args) {
   if (action === "tryon") {
     const {
       userB64, garmentDiffuse, productName, pose,
-      bgMode, bgB64, garmentFrontB64, garmentBackB64
+      bgMode, bgB64, garmentFrontUrl, garmentBackUrl, baseUrl
     } = body;
 
     if (!userB64) {
@@ -136,15 +136,35 @@ async function main(args) {
 
     try {
       // Yön bilgisine göre ön veya arka şablonu seç (eğer arka şablon yoksa ön şablona düş)
-      let selectedGarmentB64 = garmentFrontB64;
+      let selectedGarmentUrl = garmentFrontUrl;
       let selectedLabel = "Tişört Ön Şablon (şeffaf PNG):";
 
       if (pose === "back") {
-        if (garmentBackB64) {
-          selectedGarmentB64 = garmentBackB64;
+        if (garmentBackUrl) {
+          selectedGarmentUrl = garmentBackUrl;
           selectedLabel = "Tişört Arka Şablon (şeffaf PNG):";
         } else {
           console.warn("[TRYON] Arka şablon bulunamadı, ön şablona düşülüyor.");
+        }
+      }
+
+      let selectedGarmentB64 = null;
+      if (selectedGarmentUrl) {
+        try {
+          let fullUrl = selectedGarmentUrl;
+          if (baseUrl && !fullUrl.startsWith("http")) {
+            fullUrl = `${baseUrl.replace(/\/$/, "")}/${selectedGarmentUrl.replace(/^\//, "")}`;
+          }
+          console.log("[TRYON] Fetching template from:", fullUrl);
+          const templateRes = await fetch(fullUrl);
+          if (templateRes.ok) {
+            const buffer = await templateRes.arrayBuffer();
+            selectedGarmentB64 = Buffer.from(buffer).toString("base64");
+          } else {
+            console.error("[TRYON] Failed to fetch template:", fullUrl, templateRes.status);
+          }
+        } catch (e) {
+          console.error("[TRYON] Template download error:", e);
         }
       }
 
