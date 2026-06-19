@@ -89,16 +89,11 @@ on(els.run, "click", async () => {
     const frontUrl = ACTIVE_SPEC.garmentFrontUrl || "";
     const backUrl  = ACTIVE_SPEC.garmentBackUrl  || "";
 
-    const frontB64 = frontUrl ? await urlToBase64(frontUrl).catch(()=>null) : null;
-    const backB64  = backUrl  ? await urlToBase64(backUrl).catch(()=>null)  : null;
-
     console.groupCollapsed("[TRYON] click → inputs");
     console.log("bgMode:", els.bgSel?.value ?? "keep");
     console.log("userB64 length:", USER_B64?.length || 0);
     console.log("front url:", frontUrl);
     console.log("back  url:", backUrl);
-    console.log("frontB64 length:", frontB64?.length || 0);
-    console.log("backB64  length:", backB64?.length || 0);
     console.log("diffuseUrl:", ACTIVE_SPEC.diffuseUrl || null);
     console.groupEnd();
 
@@ -108,8 +103,8 @@ on(els.run, "click", async () => {
       productName: ACTIVE_SPEC.productName,
       bgMode: els.bgSel?.value ?? "keep",
       bgB64: BG_B64,
-      garmentFrontB64: frontB64,
-      garmentBackB64:  backB64,
+      garmentFrontUrl: frontUrl,
+      garmentBackUrl:  backUrl,
     });
 
     if (!resultB64) throw new Error("Geçerli görsel dönmedi.");
@@ -165,12 +160,8 @@ if (tryonRunSingle) {
         productName: ACTIVE_SPEC.productName,
         colorLabel: ACTIVE_SPEC.colorLabel,
         bgMode: "keep",
-        garmentFrontB64: ACTIVE_SPEC.garmentFrontUrl
-          ? await urlToBase64(ACTIVE_SPEC.garmentFrontUrl)
-          : null,
-        garmentBackB64: ACTIVE_SPEC.garmentBackUrl
-          ? await urlToBase64(ACTIVE_SPEC.garmentBackUrl)
-          : null,
+        garmentFrontUrl: ACTIVE_SPEC.garmentFrontUrl || null,
+        garmentBackUrl: ACTIVE_SPEC.garmentBackUrl || null,
       });
 
       if (!resultB64) throw new Error("Görsel alınamadı.");
@@ -303,7 +294,7 @@ async function callServerlessAction(action, data) {
 async function runGeminiTryOn(opts) {
   const {
     userB64, garmentDiffuse, productName,
-    bgMode, bgB64, garmentFrontB64, garmentBackB64
+    bgMode, bgB64, garmentFrontUrl, garmentBackUrl
   } = opts;
 
   // 1️⃣ Duruş Tespiti Eylemi
@@ -322,8 +313,9 @@ async function runGeminiTryOn(opts) {
     pose,
     bgMode,
     bgB64,
-    garmentFrontB64,
-    garmentBackB64
+    garmentFrontUrl,
+    garmentBackUrl,
+    baseUrl: window.location.origin
   });
 
   return tryonRes.resultB64;
