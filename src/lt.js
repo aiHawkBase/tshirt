@@ -55,8 +55,8 @@ export const Lt = {
     },
 
     tryOn: {
-      front: "besiktas1.jpg",
-      back:  "besiktas1.jpg",
+      front: "clothes/besiktas_on.jpeg",
+      back:  "clothes/besiktas_arka.jpeg",
     },
 
     variants: [
@@ -67,8 +67,8 @@ export const Lt = {
         diffuse: "besiktas1.jpg",   
         heroBg: "besiktaswallpaper.webp",
         tryOn: {
-          front: "besiktas1.jpg",
-          back:  "besiktas1.jpg",
+          front: "clothes/besiktas_on.jpeg",
+          back:  "clothes/besiktas_arka.jpeg",
         }
       },
       { 
@@ -78,8 +78,8 @@ export const Lt = {
         diffuse: "besiktas2.jpg",   
         heroBg: "besiktaswallpaper.webp",
         tryOn: {
-          front: "besiktas2.jpg",
-          back:  "besiktas2.jpg",
+          front: "clothes/besiktas_on.jpeg",
+          back:  "clothes/besiktas_arka.jpeg",
         }
       },
     ],
