@@ -33,7 +33,7 @@ function triggerPunch(intensity = 1) {
 }
 
 /* ------------ ürün & varyant ------------ */
-let idx = Math.max(0, ORDER.indexOf("Vibe Fly"));
+let idx = Math.max(0, ORDER.indexOf("Vibe Besiktas"));
 let variantIdx = 0;
 const currentKey = () => ORDER[(idx % ORDER.length + ORDER.length) % ORDER.length];
 if (prevBtn) prevBtn.addEventListener("click", () => { idx--; variantIdx = 0; showProduct(currentKey(), true); });
