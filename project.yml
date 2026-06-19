@@ -5,6 +5,8 @@ packages:
       - name: run
         runtime: nodejs:18
         web: true
+        limits:
+          timeout: 60000
         parameters: {}
         environment:
           GEMINI_API_KEY: "${GEMINI_API_KEY}"
